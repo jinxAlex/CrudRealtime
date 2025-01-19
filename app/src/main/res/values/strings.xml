@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">CrudRealtime180125</string>
+    <string name="descripción_articulo">"Descripción: %s"</string>
+    <string name="precio_articulo">"Precio: %s"</string>
+</resources>
