@@ -65,24 +65,68 @@ class ActivityRecyclerArticulos : AppCompatActivity() {
             val i = Intent(this,AddActivity::class.java)
             startActivity(i)
         }
+        binding.navegacion.setNavigationItemSelectedListener {
+            when(it.itemId){
+                R.id.item_salir -> {
+                    finishAffinity()
+                    true
+                }
+
+                R.id.item_borrar -> {
+                    database.removeValue().addOnCompleteListener {
+                        if (it.isSuccessful){
+                            Toast.makeText(this,"Articulos eliminados",Toast.LENGTH_SHORT).show()
+                            traerDatos()
+                        }else{
+                            Toast.makeText(this,"Hubo un error en el sistema", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    true
+                }
+                R.id.item_cerrarSesion -> {
+                    auth.signOut()
+                    finish()
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
-    private fun editar(item: Articulo) {
-
+    private fun editar(articulo: Articulo) {
+        val bundle = Bundle().apply {
+            putSerializable("ARTICULO",articulo)
+        }
+        val i = Intent(this, AddActivity::class.java)
+        i.putExtras(bundle)
+        startActivity(i)
     }
 
     private fun borrar(articulo: Articulo) {
-        database.child(articulo.nombre.replace(" ","_")).removeValue()
-            .addOnSuccessListener {
-                val position = adapter.lista.indexOf(articulo)
-                if(position!= -1){
-                    adapter.lista.removeAt(position)
-                    adapter.notifyItemRemoved(position)
-                    Toast.makeText(this,"Artículo borrado", Toast.LENGTH_SHORT).show()
+        database.get().addOnSuccessListener {
+            for(nodo in it.children){
+                val nombre=nodo.child("nombre").getValue(String::class.java)
+                if(nombre==articulo.nombre){
+                    nodo.ref.removeValue()
+                        .addOnSuccessListener {
+                            val position = adapter.lista.indexOf(articulo)
+                            if(position!= -1){
+                                adapter.lista.removeAt(position)
+                                adapter.notifyItemRemoved(position)
+                                Toast.makeText(this,"Se ha eliminado",Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(this,"No se ha conseguido eliminar",Toast.LENGTH_SHORT).show()
+                        }
+                    break
                 }
             }
-            .addOnFailureListener {
-                Toast.makeText(this,"Error al borrar el artículo", Toast.LENGTH_SHORT).show()
-            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        traerDatos()
     }
 }
